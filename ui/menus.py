@@ -21,7 +21,7 @@ def select_platform() -> str:
 
 def prompt_url(platform: str) -> str:
     return questionary.text(
-        "Video URL:",
+        "URL:",
         validate=lambda x: bool(x.strip()),
     ).ask()
 

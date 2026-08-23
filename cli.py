@@ -97,7 +97,7 @@ def main() -> None:
 
     url = args.url
     if not url:
-        url = questionary.text("Video URL:").ask()
+        url = questionary.text("URL:").ask()
         if not url:
             return
 
