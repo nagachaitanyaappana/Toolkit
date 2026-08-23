@@ -1,0 +1,16 @@
+[project]
+name = "vdown"
+version = "0.1.0"
+description = "Universal Video Downloader"
+requires-python = ">=3.10"
+dependencies = [
+    "yt-dlp",
+    "rich",
+    "questionary",
+]
+
+[project.scripts]
+vdown = "vdown.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["vdown*"]
