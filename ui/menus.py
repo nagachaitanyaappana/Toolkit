@@ -80,3 +80,60 @@ def confirm_download(title: str) -> bool:
 def wait_for_enter(message: str = "Press Enter to continue...") -> None:
     questionary.print(message)
     input()
+
+
+def main_menu(tools: list) -> object | None:
+    """
+    Display the main menu using letter-key navigation.
+
+    a) Tool 1
+    b) Tool 2
+    ...
+    x) Exit
+
+    Returns the selected tool instance, or ``None`` to exit.
+    """
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.text import Text
+
+    console = Console()
+
+    # Print header banner
+    console.print(
+        Panel(
+            Text("🎯  THE TOOLKIT  🎯", style="bold cyan"),
+            title="v1.0",
+            border_style="cyan",
+            expand=False,
+        )
+    )
+
+    # List tools with letter keys
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    for idx, tool in enumerate(tools):
+        letter = letters[idx] if idx < len(letters) else str(idx)
+        line = f"[bold]{letter})[/bold]  {tool.icon}  {tool.name}"
+        console.print(f"  {line}")
+
+    console.print()
+    console.print("  x)  ❌  Exit")
+    console.print()
+    console.print("[dim]Type a letter to select a tool, or 'x' to exit.[/dim]")
+
+    # Letter-key input loop
+    while True:
+        try:
+            raw = input("🔍 Select: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            return None
+
+        if raw in ("x", "q", "quit", "exit", ""):
+            return None
+
+        if len(raw) == 1 and raw.isalpha():
+            idx = letters.index(raw)
+            if idx < len(tools):
+                return tools[idx]
+
+        console.print("[red]✗  Invalid selection. Please type a letter.[/red]")

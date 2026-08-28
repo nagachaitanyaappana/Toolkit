@@ -1,16 +1,26 @@
 [project]
-name = "vdown"
-version = "0.1.0"
-description = "Universal Video Downloader"
+name = "toolkit"
+version = "1.0.0"
+description = "Interactive terminal toolkit with utilities, system tools, and more"
 requires-python = ">=3.10"
 dependencies = [
     "yt-dlp",
     "rich",
     "questionary",
+    "phonenumbers",
+    "qrcode[terminal]",
+    "psutil",
+    "requests",
+    "pyperclip",
+    "Pillow",
 ]
 
+[project.optional-dependencies]
+email = ["secure-smtpd"]
+dev = ["pytest"]
+
 [project.scripts]
-vdown = "vdown.cli:main"
+toolkit = "main:main"
 
 [tool.setuptools.packages.find]
-include = ["vdown*"]
+include = ["core*", "tools*", "ui*", "utils*"]
