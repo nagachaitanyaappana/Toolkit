@@ -11,8 +11,10 @@ from core.formats import MediaInfo, Format
 from core.options import build_yt_dlp_options
 
 
-def extract_info(url: str) -> dict:
+def extract_info(url: str, cookies_file: Path | None = None) -> dict:
     ydl_opts = {"quiet": True, "no_warnings": True, "extract_flat": False}
+    if cookies_file and cookies_file.exists():
+        ydl_opts["cookiefile"] = str(cookies_file)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         return ydl.extract_info(url, download=False)
 
@@ -102,12 +104,14 @@ def download_spotify_playlist(
         sys.stdout.flush()
 
 
-def extract_playlist_info(url: str) -> dict:
+def extract_playlist_info(url: str, cookies_file: Path | None = None) -> dict:
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
         "extract_flat": True,
     }
+    if cookies_file and cookies_file.exists():
+        ydl_opts["cookiefile"] = str(cookies_file)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         return ydl.extract_info(url, download=False)
 
@@ -217,6 +221,7 @@ def run_download(
     video_format: str = "mp4",
     audio_format: str = "mp3",
     output_dir: Path | None = None,
+    cookies_file: Path | None = None,
 ) -> None:
     opts = build_yt_dlp_options(
         url=url,
@@ -224,6 +229,7 @@ def run_download(
         video_format=video_format,
         audio_format=audio_format,
         download_type=download_type,
+        cookies_file=cookies_file,
     )
 
     def _hook(d: dict) -> None:
@@ -257,13 +263,14 @@ def run_download_playlist(
     output_dir: Path,
     video_format: str = "mp4",
     audio_format: str = "mp3",
+    cookies_file: Path | None = None,
 ) -> None:
     total = len(entries)
     for idx, entry in enumerate(entries, 1):
         url = entry.get("url") or entry.get("webpage_url")
         if not url:
             continue
-        title = entry.get("title", "Unknown")
+                                title = entry.get("title", "Unknown")
         sys.stdout.write(f"\n📹 Video {idx}/{total}: {title}\n")
         sys.stdout.flush()
 
@@ -273,6 +280,7 @@ def run_download_playlist(
             video_format=video_format,
             audio_format=audio_format,
             download_type=download_type,
+            cookies_file=cookies_file,
         )
 
         def _hook(d: dict, current=idx, total_videos=total) -> None:

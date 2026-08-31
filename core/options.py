@@ -11,6 +11,7 @@ def build_yt_dlp_options(
     video_format: str = "mp4",
     audio_format: str = "mp3",
     download_type: str = "video",
+    cookies_file: Path | None = None,
 ) -> dict:
     out_dir = output_dir or get_downloads_dir()
     out_template = str(out_dir / "%(title)s.%(ext)s")
@@ -21,6 +22,9 @@ def build_yt_dlp_options(
         "outtmpl": out_template,
         "concurrent_fragment_downloads": 8,
     }
+
+    if cookies_file and cookies_file.exists():
+        opts["cookiefile"] = str(cookies_file)
 
     if download_type == "audio":
         opts.update(
