@@ -184,8 +184,12 @@ def build_media_info(info: dict) -> MediaInfo:
     )
 
 
-def format_filesize(size: int | None) -> str:
+def format_filesize(size: int | float | str | None) -> str:
     if not size:
+        return "Unknown"
+    try:
+        size = float(size)
+    except (ValueError, TypeError):
         return "Unknown"
     for unit in ["B", "KB", "MB", "GB"]:
         if size < 1024:
@@ -270,7 +274,7 @@ def run_download_playlist(
         url = entry.get("url") or entry.get("webpage_url")
         if not url:
             continue
-                                title = entry.get("title", "Unknown")
+        title = entry.get("title", "Unknown")
         sys.stdout.write(f"\n📹 Video {idx}/{total}: {title}\n")
         sys.stdout.flush()
 

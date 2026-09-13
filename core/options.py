@@ -7,13 +7,13 @@ from utils.paths import get_downloads_dir
 
 def build_yt_dlp_options(
     url: str,
-    output_dir: Path | None = None,
+    output_dir: Path | str | None = None,
     video_format: str = "mp4",
     audio_format: str = "mp3",
     download_type: str = "video",
     cookies_file: Path | None = None,
 ) -> dict:
-    out_dir = output_dir or get_downloads_dir()
+    out_dir = Path(output_dir) if output_dir else get_downloads_dir()
     out_template = str(out_dir / "%(title)s.%(ext)s")
 
     opts: dict = {
