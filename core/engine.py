@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -11,107 +14,95 @@ from core.formats import MediaInfo, Format
 from core.options import build_yt_dlp_options
 
 
-def extract_info(url: str, cookies_file: Path | None = None) -> dict:
-    ydl_opts = {"quiet": True, "no_warnings": True, "extract_flat": False}
+def check_ffmpeg() -> bool:
+    """Return True if ffmpeg is found in PATH."""
+    return shutil.which("ffmpeg") is not None
+
+
+def is_spotify_url(url: str) -> bool:
+    """Check if the given URL is a Spotify link."""
+    return "open.spotify.com" in url or "spotify.link" in url
+
+
+def get_spotify_type(url: str) -> str:
+    """Detect whether a Spotify URL is a track, album, playlist, or artist."""
+    url_lower = url.lower()
+    if "/track/" in url_lower:
+        return "track"
+    elif "/album/" in url_lower:
+        return "album"
+    elif "/playlist/" in url_lower:
+        return "playlist"
+    elif "/artist/" in url_lower:
+        return "artist"
+    return "unknown"
+
+
+def is_spotify_playlist(url: str) -> bool:
+    """Backward compatibility check for Spotify playlists or albums."""
+    return is_spotify_url(url) and get_spotify_type(url) in ("playlist", "album")
+
+
+def has_mixed_video_and_playlist(url: str) -> bool:
+    """Detect if URL has both a specific video ID and a playlist ID (e.g. YouTube watch?v=...&list=...)."""
+    parsed = urlparse(url)
+    qs = parse_qs(parsed.query)
+    has_video = "v" in qs or "watch" in parsed.path or "youtu.be" in parsed.netloc
+    has_list = "list" in qs
+    return bool(has_video and has_list)
+
+
+def strip_playlist_params(url: str) -> str:
+    """Remove list= and index= query parameters so only the single video is processed."""
+    parsed = urlparse(url)
+    qs = parse_qs(parsed.query)
+    qs.pop("list", None)
+    qs.pop("index", None)
+    flat_query = "&".join(f"{k}={v[0]}" for k, v in qs.items())
+    return parsed._replace(query=flat_query).geturl()
+
+
+def is_playlist(url: str) -> bool:
+    """Detect if URL points directly to a playlist/album."""
+    if is_spotify_url(url):
+        return get_spotify_type(url) in ("playlist", "album")
+    parsed = urlparse(url)
+    qs = parse_qs(parsed.query)
+    if "list" in qs and not ("v" in qs or "watch" in parsed.path):
+        return True
+    if "/playlist" in parsed.path or "/sets/" in parsed.path:
+        return True
+    return False
+
+
+def extract_info(
+    url: str,
+    cookies_file: Path | None = None,
+    browser_cookies: str | None = None,
+) -> dict:
+    ydl_opts: dict = {"quiet": True, "no_warnings": True, "extract_flat": False}
     if cookies_file and cookies_file.exists():
         ydl_opts["cookiefile"] = str(cookies_file)
+    elif browser_cookies:
+        ydl_opts["cookiesfrombrowser"] = (browser_cookies,)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         return ydl.extract_info(url, download=False)
 
 
-def is_spotify_playlist(url: str) -> bool:
-    return "open.spotify.com" in url and "/playlist/" in url
-
-
-def is_playlist(url: str) -> bool:
-    parsed = urlparse(url)
-    qs = parse_qs(parsed.query)
-    return "list" in qs
-
-
-def extract_spotify_playlist(url: str) -> dict:
-    import subprocess
-
-    result = subprocess.run(
-        ["spotdl", "save", url, "--save-file", "/tmp/vdown_spotify.spotdl"],
-        capture_output=True,
-        text=True,
-        timeout=1200,
-    )
-
-    import json
-    import os
-
-    try:
-        with open("/tmp/vdown_spotify.spotdl") as f:
-            data = json.load(f)
-        os.unlink("/tmp/vdown_spotify.spotdl")
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        raise RuntimeError(f"Failed to fetch Spotify playlist: {e}\nspotdl stderr: {result.stderr[:500]}")
-
-    entries = []
-    for song in data:
-        title = song.get("name", "")
-        artists = ", ".join(a.get("name", "") for a in song.get("artists", []))
-        entries.append({
-            "title": title,
-            "artist": artists,
-            "uploader": artists,
-        })
-
-    playlist_title = data[0].get("album", {}).get("name", "Spotify Playlist") if data else "Spotify Playlist"
-
-    return {
-        "title": playlist_title,
-        "entries": entries,
-    }
-
-
-def download_spotify_playlist(
-    entries: list[dict],
-    output_dir: Path,
-    audio_format: str = "mp3",
-) -> None:
-    total = len(entries)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    for idx, entry in enumerate(entries, 1):
-        title = entry.get("title", "Unknown")
-        artist = entry.get("artist", entry.get("uploader", ""))
-        search_query = f"{artist} {title}".strip()
-        sys.stdout.write(f"\n🎵 Track {idx}/{total}: {search_query}\n")
-        sys.stdout.flush()
-
-        try:
-            result = subprocess.run(
-                [
-                    "spotdl", "download", search_query,
-                    "--output", str(output_dir),
-                    "--format", audio_format,
-                ],
-                capture_output=True,
-                text=True,
-                timeout=300,
-            )
-            if result.returncode == 0:
-                sys.stdout.write(f"  ✓ Downloaded\n")
-            else:
-                sys.stdout.write(f"  ✗ Failed\n")
-        except subprocess.TimeoutExpired:
-            sys.stdout.write(f"  ✗ Timed out\n")
-        except Exception as exc:
-            sys.stdout.write(f"  ✗ Error: {exc}\n")
-        sys.stdout.flush()
-
-
-def extract_playlist_info(url: str, cookies_file: Path | None = None) -> dict:
-    ydl_opts = {
+def extract_playlist_info(
+    url: str,
+    cookies_file: Path | None = None,
+    browser_cookies: str | None = None,
+) -> dict:
+    ydl_opts: dict = {
         "quiet": True,
         "no_warnings": True,
         "extract_flat": True,
     }
     if cookies_file and cookies_file.exists():
         ydl_opts["cookiefile"] = str(cookies_file)
+    elif browser_cookies:
+        ydl_opts["cookiesfrombrowser"] = (browser_cookies,)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         return ydl.extract_info(url, download=False)
 
@@ -126,9 +117,12 @@ def parse_range(range_str: str, max_num: int) -> list[int]:
             end = min(max_num, int(end.strip()))
             indices.update(range(start, end + 1))
         else:
-            num = int(part)
-            if 1 <= num <= max_num:
-                indices.add(num)
+            try:
+                num = int(part)
+                if 1 <= num <= max_num:
+                    indices.add(num)
+            except ValueError:
+                pass
     return sorted(indices)
 
 
@@ -208,7 +202,7 @@ def get_best_quality(info: dict, download_type: str) -> str:
             return f"{ext.upper()} @ {abr}kbps"
         return "Best audio"
     else:
-        formats = [f for f in info.get("formats", []) if f.get("vcodec") != "none" and f.get("acodec") == "none"]
+        formats = [f for f in info.get("formats", []) if f.get("vcodec") != "none"]
         if formats:
             best = max(formats, key=lambda f: f.get("height") or 0)
             res = best.get("resolution", "?")
@@ -224,8 +218,10 @@ def run_download(
     download_type: str,
     video_format: str = "mp4",
     audio_format: str = "mp3",
+    resolution: str = "best",
     output_dir: Path | None = None,
     cookies_file: Path | None = None,
+    browser_cookies: str | None = None,
 ) -> None:
     opts = build_yt_dlp_options(
         url=url,
@@ -233,7 +229,10 @@ def run_download(
         video_format=video_format,
         audio_format=audio_format,
         download_type=download_type,
+        resolution=resolution,
+        is_playlist=False,
         cookies_file=cookies_file,
+        browser_cookies=browser_cookies,
     )
 
     def _hook(d: dict) -> None:
@@ -253,7 +252,7 @@ def run_download(
                 sys.stdout.write(f"\r⬇ {format_filesize(downloaded)} downloaded | {speed_str}")
             sys.stdout.flush()
         elif status == "finished":
-            sys.stdout.write("\n✓ Finalizing...\n")
+            sys.stdout.write("\n⚙️  Processing / Merging with FFmpeg...\n")
             sys.stdout.flush()
 
     opts["progress_hooks"] = [_hook]
@@ -267,7 +266,9 @@ def run_download_playlist(
     output_dir: Path,
     video_format: str = "mp4",
     audio_format: str = "mp3",
+    resolution: str = "best",
     cookies_file: Path | None = None,
+    browser_cookies: str | None = None,
 ) -> None:
     total = len(entries)
     for idx, entry in enumerate(entries, 1):
@@ -275,7 +276,7 @@ def run_download_playlist(
         if not url:
             continue
         title = entry.get("title", "Unknown")
-        sys.stdout.write(f"\n📹 Video {idx}/{total}: {title}\n")
+        sys.stdout.write(f"\n📹 [{idx}/{total}]: {title}\n")
         sys.stdout.flush()
 
         opts = build_yt_dlp_options(
@@ -284,7 +285,10 @@ def run_download_playlist(
             video_format=video_format,
             audio_format=audio_format,
             download_type=download_type,
+            resolution=resolution,
+            is_playlist=True,
             cookies_file=cookies_file,
+            browser_cookies=browser_cookies,
         )
 
         def _hook(d: dict, current=idx, total_videos=total) -> None:
@@ -307,7 +311,7 @@ def run_download_playlist(
                     sys.stdout.write(f"\r⬇ [{current}/{total_videos}] {format_filesize(downloaded)} downloaded | {speed_str}")
                 sys.stdout.flush()
             elif status == "finished":
-                sys.stdout.write(f"\r⬇ [{current}/{total_videos}] ✓ Finalizing...\n")
+                sys.stdout.write(f"\r⬇ [{current}/{total_videos}] ⚙️  Processing / Finalizing...\n")
                 sys.stdout.flush()
 
         opts["progress_hooks"] = [_hook]

@@ -34,22 +34,17 @@ def get_all_tools() -> list[Tool]:
 
 def _load_tools() -> None:
     """Import and instantiate all tool modules, registering each one."""
-    # Import individual tool modules – each module registers itself on import.
     from tools.downloader import DownloaderTool
     from tools.message_sender import MessageSenderTool
     from tools.phone_checker import PhoneCheckerTool
-    from tools.vehicle_checker import VehicleCheckerTool
     from tools.qr_generator import QRGeneratorTool
-    from tools.password_gen import PasswordGeneratorTool
+    from tools.password_mgr import PasswordManagerTool
     from tools.sysinfo import SysInfoTool
-    from tools.network_tool import NetworkTool
 
     # Instantiate and register each tool
     register_tool(DownloaderTool())
     register_tool(MessageSenderTool())
     register_tool(PhoneCheckerTool())
-    register_tool(VehicleCheckerTool())
     register_tool(QRGeneratorTool())
-    register_tool(PasswordGeneratorTool())
+    register_tool(PasswordManagerTool())
     register_tool(SysInfoTool())
-    register_tool(NetworkTool())

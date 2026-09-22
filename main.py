@@ -35,11 +35,16 @@ def main() -> None:
 
         # Ask whether to return to menu or exit
         try:
-            again = input("\n[Enter] to return to menu, 'x' to exit: ").strip().lower()
+            import questionary
+
+            again = questionary.confirm(
+                "Return to main menu?",
+                default=True,
+            ).ask()
+            if not again:
+                console.print("\n[dim]👋  Thanks for using the Toolkit! Goodbye![/dim]")
+                break
         except (EOFError, KeyboardInterrupt):
-            again = ""
-        if again in ("x", "q"):
-            console.print("\n[dim]👋  Thanks for using the Toolkit! Goodbye![/dim]")
             break
 
 

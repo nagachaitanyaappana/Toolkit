@@ -13,6 +13,8 @@ dependencies = [
     "requests",
     "pyperclip",
     "Pillow",
+    "spotdl",
+    "truecallerpy",
 ]
 
 [project.optional-dependencies]
