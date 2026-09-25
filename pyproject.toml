@@ -4,6 +4,8 @@ version = "1.0.0"
 description = "Interactive terminal toolkit with utilities, system tools, and more"
 requires-python = ">=3.10"
 dependencies = [
+    "PyQt6",
+    "cryptography",
     "yt-dlp",
     "rich",
     "questionary",

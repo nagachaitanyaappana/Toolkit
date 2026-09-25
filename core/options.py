@@ -28,6 +28,8 @@ def build_yt_dlp_options(
         "outtmpl": out_template,
         "concurrent_fragment_downloads": 8,
         "windowsfilenames": True,
+        "noplaylist": not is_playlist,
+        "nocheckcertificate": True,
     }
 
     if cookies_file and cookies_file.exists():
@@ -36,23 +38,29 @@ def build_yt_dlp_options(
         opts["cookiesfrombrowser"] = (browser_cookies,)
 
     if download_type == "audio":
+        clean_codec = str(audio_format).lower().strip()
         opts.update(
             {
                 "format": "bestaudio/best",
                 "postprocessors": [
                     {
                         "key": "FFmpegExtractAudio",
-                        "preferredcodec": audio_format,
-                        "preferredquality": "320" if audio_format == "mp3" else "0",
+                        "preferredcodec": clean_codec,
+                        "preferredquality": "320" if clean_codec == "mp3" else "0",
                     }
                 ],
             }
         )
     else:
-        if resolution in ("best", "", None):
+        res_str = str(resolution or "").lower().replace("p", "").strip()
+        if res_str in ("best", "best (auto)", "auto", "", "none"):
             fmt = "bestvideo*+bestaudio/best"
         else:
-            fmt = f"bestvideo*[height<={resolution}]+bestaudio/best[height<={resolution}]/best"
+            try:
+                height = int(res_str)
+                fmt = f"bestvideo*[height<={height}]+bestaudio/best[height<={height}]/best"
+            except (ValueError, TypeError):
+                fmt = "bestvideo*+bestaudio/best"
 
         opts.update(
             {

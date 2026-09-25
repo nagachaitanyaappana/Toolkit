@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Toolkit
+GenericName=Cyber Control Center
+Comment=Developer and media toolkit with downloader, password vault, phone lookup, QR studio, and system telemetry
+Exec=/home/naga/Projects/Toolkit/toolkit
+Icon=toolkit
+Terminal=false
+Categories=Development;Utility;
+Keywords=toolkit;downloader;youtube;password;vault;phone;truecaller;qr;telemetry;system;
+StartupNotify=true
+StartupWMClass=Toolkit
