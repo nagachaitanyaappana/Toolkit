@@ -4,6 +4,7 @@ Orchestrates the navigation sidebar, modular tool deck views,
 live terminal console drawer, and global keyboard shortcuts.
 """
 
+import sys
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, QSize
@@ -38,7 +39,8 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(640, 460)
 
         # App Icon
-        icon_path = Path(__file__).resolve().parent.parent.parent / "assets" / "icon.png"
+        base_dir = getattr(sys, '_MEIPASS', Path(__file__).resolve().parent.parent.parent)
+        icon_path = Path(base_dir) / "assets" / "icon.png"
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
 

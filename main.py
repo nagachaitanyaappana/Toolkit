@@ -68,8 +68,8 @@ def main() -> None:
         run_tui()
         return
 
-    # Check if display environment exists (X11 or Wayland)
-    has_display = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+    # Check if display environment exists (Windows, X11 or Wayland)
+    has_display = sys.platform == "win32" or bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
     if not has_display:
         run_tui()
         return
@@ -96,7 +96,8 @@ def main() -> None:
         app.setApplicationDisplayName("Toolkit")
         app.setDesktopFileName("toolkit.desktop")
 
-        icon_path = Path(__file__).resolve().parent / "assets" / "icon.png"
+        base_dir = getattr(sys, '_MEIPASS', Path(__file__).resolve().parent)
+        icon_path = Path(base_dir) / "assets" / "icon.png"
         if icon_path.exists():
             app.setWindowIcon(QIcon(str(icon_path)))
 

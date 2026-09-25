@@ -2,10 +2,10 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![GUI](https://img.shields.io/badge/GUI-PyQt6-00ff9d.svg)](https://riverbankcomputing.com/software/pyqt/)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-cyan.svg)](https://github.com/nagachaitanyaappana/Toolkit)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-cyan.svg)](https://github.com/nagachaitanyaappana/Toolkit/releases)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
-**Toolkit** is a fast, responsive, native desktop application and CLI control center styled in an aesthetic **Cyberpunk / Emerald Matrix** dark design language. Built with Python and PyQt6, it consolidates essential everyday developer utilities, media downloaders, encryption vaults, and telemetry into a single high-performance cockpit.
+**Toolkit** is a fast, responsive, native desktop application and CLI control center styled in an aesthetic **Cyberpunk / Emerald Matrix** dark design language. Built with Python and PyQt6 for Linux and Windows, it consolidates essential everyday developer utilities, media downloaders, encryption vaults, and telemetry into a single high-performance cockpit.
 
 ---
 
@@ -67,6 +67,17 @@
 | `Ctrl + L` | Toggle Live Console Drawer |
 | `Ctrl + B` | Toggle Compact / Expanded Sidebar |
 | `Ctrl + Q` | Quit Application |
+
+---
+
+## 📦 Download Pre-built Binaries
+
+Ready-to-use standalone executables for Linux and Windows are available on the **[GitHub Releases](https://github.com/nagachaitanyaappana/Toolkit/releases)** page:
+
+| Platform | Package | Description |
+| :--- | :--- | :--- |
+| **Linux (x86_64)** | `Toolkit-linux-x86_64.tar.gz` | Standalone executable + `.desktop` launcher & icon |
+| **Windows (x64)** | `Toolkit-windows-x64.zip` | Standalone `Toolkit.exe` |
 
 ---
 
